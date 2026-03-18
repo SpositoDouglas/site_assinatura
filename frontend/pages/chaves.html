@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Repositório de Chaves - Assinador Digital</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .key-box {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+        .user-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .user-list th, .user-list td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .user-list th {
+            background-color: #f4f7f6;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div id="userHeader" style="display: flex;">
+            <span>Usuário: <strong id="userHeaderName"></strong></span>
+            <div class="header-links">
+                <button class="secondary" onclick="window.location.href = '/'">Voltar</button>
+                <button class="secondary" onclick="sair()">Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container" style="max-width: 900px;">
+        <h1>Repositório de Chaves</h1>
+        
+        <div id="minhasChavesSection">
+            <h2>Minhas Chaves (Privadas e Públicas)</h2>
+            <p><strong>Aviso:</strong> Nunca compartilhe sua Chave Privada com ninguém.</p>
+            
+            <label><strong>Sua Chave Pública (Compartilhável):</strong></label>
+            <div class="key-box" id="minhaChavePublica">Carregando...</div>
+            
+            <label><strong>Sua Chave Privada (Secreta):</strong></label>
+            <div class="key-box" id="minhaChavePrivada" style="border-color: #dc3545; background-color: #fff8f8;"></div>
+        </div>
+
+        <hr style="margin: 2rem 0;">
+
+        <h2>Chaves Públicas do Sistema</h2>
+        <p>Baixe a chave pública de outros usuários para verificar documentos assinados por eles.</p>
+        
+        <table class="user-list">
+            <thead>
+                <tr>
+                    <th>Nome de Usuário</th>
+                    <th>Chave Pública</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaUsuarios">
+                <tr><td colspan="3">Carregando usuários...</td></tr>
+            </tbody>
+        </table>
+
+        <script>
+            const API_URL = `http://${window.location.hostname}:3000/api`;
+            const userId = localStorage.getItem('signerUserId');
+            const privateKey = localStorage.getItem('signerPrivateKey');
+            const username = localStorage.getItem('signerUsername');
+
+            // Autenticação básica
+            if (!userId || !privateKey || !username) {
+                alert('Você precisa estar logado para acessar o repositório.');
+                window.location.href = '/cadastro';
+            } else {
+                document.getElementById('userHeaderName').innerText = username;
+                // Exibe a chave privada que está na memória do navegador
+                document.getElementById('minhaChavePrivada').innerText = privateKey;
+            }
+
+            function sair() {
+                localStorage.clear();
+                window.location.href = '/cadastro';
+            }
+
+            // Função para fazer o Download do arquivo PEM
+            function baixarChave(nome, chavePem) {
+                const blob = new Blob([chavePem], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                // Formata o nome do arquivo, ex: chave_publica_douglas.pem
+                a.download = `chave_publica_${nome.replace(/\s+/g, '_').toLowerCase()}.pem`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }
+
+            // Busca os usuários na API e renderiza a tela
+            async function carregarDados() {
+                try {
+                    const res = await fetch(`${API_URL}/users`);
+                    const users = await res.json();
+
+                    if(users.error) throw new Error(users.error);
+
+                    const tbody = document.getElementById('tabelaUsuarios');
+                    tbody.innerHTML = '';
+
+                    users.forEach(user => {
+                        // Se for o usuário atual, preenche a caixinha lá em cima com a chave pública dele
+                        if(user.id === userId) {
+                            document.getElementById('minhaChavePublica').innerText = user.public_key;
+                        }
+
+                        // Adiciona o usuário na tabela (incluindo o próprio usuário, para ele poder baixar sua chave)
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>${user.username}</strong></td>
+                            <td><span style="font-family: monospace; color: #666;">${user.public_key.substring(0, 40)}...</span></td>
+                            <td>
+                                <button onclick="baixarChave('${user.username}', \`${user.public_key}\`)">⬇ Baixar .PEM</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                } catch (error) {
+                    document.getElementById('tabelaUsuarios').innerHTML = `<tr><td colspan="3" style="color:red;">Erro ao carregar usuários.</td></tr>`;
+                    console.error(error);
+                }
+            }
+
+            // Inicia o carregamento ao abrir a página
+            carregarDados();
+        </script>
+    </div>
+</body>
+</html>

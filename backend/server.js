@@ -113,4 +113,15 @@ app.get('/api/verify/:id', async (req, res) => {
   });
 });
 
+// Listar Todos os Usuários e Chaves Públicas
+app.get('/api/users', async (req, res) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, username, public_key')
+    .order('username', { ascending: true });
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
 app.listen(3000, () => console.log('Backend rodando na porta 3000'));
