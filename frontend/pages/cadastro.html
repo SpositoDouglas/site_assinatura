@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login / Cadastro - Assinador Digital</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div id="userHeader" style="display: none;">
+            <span>Usuário: <strong id="userHeaderName"></strong></span>
+            <div class="header-links">
+                <button class="secondary" onclick="window.location.href = '/'">Voltar</button>
+                <button class="secondary" onclick="sairGlobal()">Sair</button>
+            </div>
+        </div>
+        <div id="guestHeader" class="header-links" style="display: none; padding: 1rem 2rem;">
+            <button class="secondary" onclick="window.location.href = '/'">Voltar</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>1. Login ou Cadastro</h1>
+        
+        <label for="username">Nome de usuário:</label>
+        <input type="text" id="username" placeholder="Digite seu usuário">
+        
+        <label for="password">Senha:</label>
+        <input type="password" id="password" placeholder="Digite sua senha" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; margin-bottom: 1rem; font-size: 1rem;">
+        
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button onclick="fazerLogin()">Entrar</button>
+            <button class="secondary" onclick="registrar()">Criar Conta Nova</button>
+        </div>
+
+        <script>
+            function checkUserHeader() {
+                const username = localStorage.getItem('signerUsername');
+                if (username) {
+                    document.getElementById('userHeaderName').innerText = username;
+                    document.getElementById('userHeader').style.display = 'flex';
+                    document.getElementById('guestHeader').style.display = 'none';
+                } else {
+                    document.getElementById('userHeader').style.display = 'none';
+                    document.getElementById('guestHeader').style.display = 'flex';
+                }
+            }
+
+            function sairGlobal() {
+                localStorage.clear();
+                checkUserHeader();
+                window.location.reload();
+            }
+
+
+            function salvarSessao(data) {
+                localStorage.setItem('signerUserId', data.id);
+                localStorage.setItem('signerUsername', data.username);
+                localStorage.setItem('signerPrivateKey', data.privateKey);
+                window.location.href = '/assinar';
+            }
+
+            async function registrar() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                if (!username || !password) return alert('Digite usuário e senha!');
+                
+                const res = await fetch(`http://${window.location.hostname}:3000/api/register`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                
+
+                if (!res.ok) return alert('Erro: ' + data.error);
+                
+                alert(`Conta criada com sucesso! ID: ${data.id}`);
+                salvarSessao(data);
+            }
+
+            async function fazerLogin() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                if (!username || !password) return alert('Digite usuário e senha!');
+                
+                const res = await fetch(`http://${window.location.hostname}:3000/api/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                
+
+                if (!res.ok) return alert('Erro: ' + data.error);
+                
+                salvarSessao(data);
+            }
+
+            checkUserHeader();
+        </script>
+    </div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Assinar - Assinador Digital</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/crypto-utils.js"></script>
+</head>
+<body>
+    <header>
+        <div id="userHeader" style="display: flex;"> <span>Usuário: <strong id="userHeaderName"></strong></span>
+            <div class="header-links">
+                <button class="secondary" onclick="window.location.href = '/'">Voltar</button>
+                <button class="secondary" onclick="sairAssinar()">Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>2. Área de Assinatura</h1>
+        <textarea id="texto" placeholder="Digite o texto a ser assinado..." rows="6" cols="50"></textarea><br><br>
+        <button onclick="assinar()">Assinar e Enviar Texto</button>
+        <hr>
+        <h3>Resultado:</h3>
+        <p>ID da Assinatura (Copie isso):</p>
+        <pre id="sigIdDisplay">-</pre>
+
+        <script>
+            const userId = localStorage.getItem('signerUserId');
+            const privateKey = localStorage.getItem('signerPrivateKey');
+            const username = localStorage.getItem('signerUsername');
+
+            if (!userId || !privateKey || !username) {
+                alert('Acesso negado. Redirecionando para cadastro/login.');
+                window.location.href = '/cadastro';
+            } else {
+                document.getElementById('userHeaderName').innerText = username;
+            }
+
+            function sairAssinar() {
+                localStorage.clear();
+                window.location.href = '/cadastro';
+            }
+
+            async function assinar() {
+                const textContent = document.getElementById('texto').value;
+                if (!textContent) { alert('Digite o texto a ser assinado.'); return; }
+                
+                const signatureBase64 = await signTextReal(textContent, privateKey);
+                
+                const res = await fetch(`http://${window.location.hostname}:3000/api/sign`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, textContent, signatureBase64 })
+                });
+                const data = await res.json();
+                document.getElementById('sigIdDisplay').innerText = data.signatureId;
+                alert('Texto assinado e enviado com sucesso!');
+            }
+        </script>
+    </div>
+</body>
+</html>

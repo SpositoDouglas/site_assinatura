@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificar - Assinador Digital</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div id="userHeader" style="display: none;">
+            <span>Usuário: <strong id="userHeaderName"></strong></span>
+            <div class="header-links">
+                <button class="secondary" onclick="window.location.href = '/'">Voltar</button>
+                <button class="secondary" onclick="sairGlobal()">Sair</button>
+            </div>
+        </div>
+        <div id="guestHeader" class="header-links" style="display: none; padding: 1rem 2rem;">
+            <button class="secondary" onclick="window.location.href = '/'">Voltar</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>3. Verificar Assinatura</h1>
+        
+        <input type="text" id="verifyId" placeholder="ID da Assinatura (UUID)" style="width: 300px;">
+        <button onclick="verificar()">Verificar Validade</button>
+        <hr>
+        <pre id="resultado"></pre>
+
+        <script>
+            function checkUserHeader() {
+                const username = localStorage.getItem('signerUsername');
+                if (username) {
+                    document.getElementById('userHeaderName').innerText = username;
+                    document.getElementById('userHeader').style.display = 'flex';
+                    document.getElementById('guestHeader').style.display = 'none';
+                } else {
+                    document.getElementById('userHeader').style.display = 'none';
+                    document.getElementById('guestHeader').style.display = 'flex';
+                }
+            }
+
+            function sairGlobal() {
+                localStorage.clear();
+                checkUserHeader();
+                window.location.reload();
+            }
+
+            async function verificar() {
+                const id = document.getElementById('verifyId').value;
+                if (!id) { alert('Digite o ID da assinatura.'); return; }
+                
+                const res = await fetch(`http://${window.location.hostname}:3000/api/verify/${id}`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    document.getElementById('resultado').innerText = `Erro: ${data.error}`;
+                    return;
+                }
+
+                const isValid = data.status === 'VÁLIDA';
+                document.getElementById('resultado').innerHTML = 
+                    `<h3>STATUS: <span style="color:${isValid ? 'green' : 'red'}">${data.status}</span></h3>` +
+                    `Signatário: <strong>${data.signatario}</strong>\n` +
+                    `Algoritmo: ${data.algoritmo}\n` +
+                    `Data: ${new Date(data.data).toLocaleString()}\n\n` +
+                    `<strong>Texto Assinado:</strong>\n` +
+                    `<div style="background-color: #e9ecef; padding: 15px; border-left: 4px solid #007bff; margin-top: 10px; font-family: 'Segoe UI', sans-serif; white-space: pre-wrap; color: #333;">${data.textoOriginal}</div>`;
+            }
+
+            checkUserHeader();
+        </script>
+    </div>
+</body>
+</html>

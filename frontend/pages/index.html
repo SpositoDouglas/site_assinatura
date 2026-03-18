@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Assinador Digital - Início</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div id="userHeader" style="display: none;">
+            <span>Usuário: <strong id="userHeaderName"></strong></span>
+            <button class="secondary" onclick="sairGlobal()">Sair</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Bem vindo ao Assinador Digital</h1>
+        <ul>
+            <li><a href="/cadastro">1. Login / Cadastro de Usuário</a></li>
+            <li><a href="/assinar">2. Área de Assinatura (Autenticada)</a></li>
+            <li><a href="/verificar">3. Página de Verificação</a></li>
+        </ul>
+    </div>
+
+    <script>
+        function checkUserHeader() {
+            const username = localStorage.getItem('signerUsername');
+            if (username) {
+                document.getElementById('userHeaderName').innerText = username;
+                document.getElementById('userHeader').style.display = 'flex';
+            } else {
+                document.getElementById('userHeader').style.display = 'none';
+            }
+        }
+
+        function sairGlobal() {
+            localStorage.clear();
+            checkUserHeader();
+            window.location.reload();
+        }
+
+
+        checkUserHeader();
+    </script>
+</body>
+</html>
